@@ -51,7 +51,7 @@
         #050002;
     }
 
-    /* 起始歡迎彈窗 (Welcome Screen) */
+    /* 起始歡迎彈窗 */
     .welcome-overlay {
       position: fixed;
       inset: 0;
@@ -559,16 +559,25 @@
       text-shadow: none;
     }
 
+    /* 存檔按鈕樣式（預設 disabled） */
     .clear-all-btn {
       background: rgba(148, 163, 184, 0.1);
       border: 1.5px solid #94a3b8;
       color: #e2e8f0;
       box-shadow: 0 0 10px rgba(148, 163, 184, 0.2);
     }
-    .clear-all-btn:hover {
+    .clear-all-btn:not(:disabled):hover {
       background: rgba(148, 163, 184, 0.25);
       box-shadow: 0 0 18px rgba(255, 255, 255, 0.4);
       transform: translateY(-1px);
+    }
+    .clear-all-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      border-color: #475569;
+      color: #64748b;
+      box-shadow: none;
+      text-shadow: none;
     }
 
     .floating-anxiety-btn {
@@ -888,7 +897,7 @@
           <span id="confirmBtnText">確認精神規劃</span>
         </button>
 
-        <button class="action-btn clear-all-btn" id="clearAllBtn">
+        <button class="action-btn clear-all-btn" id="clearAllBtn" disabled>
           <svg class="btn-icon" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           <span>📸 存檔並換下位</span>
         </button>
@@ -952,7 +961,6 @@
       return currentHour >= 21 || currentHour < 6;
     }
 
-    // 啟動歡迎彈窗邏輯
     startPlanningBtn.addEventListener('click', () => {
       const name = welcomeNameInput.value.trim();
       currentUserName = name || '解憂訪客';
@@ -1230,11 +1238,11 @@
       previousStats = JSON.parse(JSON.stringify(stats));
       stats.forEach(s => s.value = 0);
 
-      confirmBtn.disabled = false;
+      confirmBtn.disabled = false; // 啟用確認規劃按鈕
 
       const stageBadge = document.getElementById('stageBadge');
       stageBadge.classList.add('comparing');
-      stageBadge.innerHTML = '<span>階段 2：規劃【下學期】（完成後請點擊確定）</span>';
+      stageBadge.innerHTML = '<span>階段 2：規劃【下學期】（完成後請點擊確認）</span>';
       document.getElementById('chartLegend').style.display = 'flex';
       document.getElementById('legendPrev').style.display = 'flex';
       document.getElementById('lockPrevBtnText').textContent = '📌 重新更新上學期基準';
@@ -1243,13 +1251,13 @@
       updateChart();
     });
 
-    // 2. 確定下學期規劃
+    // 2. 確定下學期規劃（此時才啟用存檔按鈕）
     confirmBtn.addEventListener('click', () => {
       if (isFinalized || !previousStats) return;
 
       const currentSum = stats.reduce((sum, s) => sum + s.value, 0);
       if (currentSum === 0) {
-        alert('請先分配「下學期」的點數後再點擊確定喔！');
+        alert('請先分配「下學期」的點數後再點擊確認喔！');
         return;
       }
 
@@ -1260,15 +1268,17 @@
       lockPrevBtn.style.cursor = 'not-allowed';
 
       confirmBtn.disabled = true;
-      document.getElementById('confirmBtnText').textContent = '🔒 已確定（無法再修改）';
+      document.getElementById('confirmBtnText').textContent = '🔒 已確認（無法再修改）';
+
+      // 【核心改動】：確認完成雙學期規劃後，才啟用存檔換人按鈕
+      clearAllBtn.disabled = false;
 
       const stageBadge = document.getElementById('stageBadge');
       stageBadge.className = 'stage-badge finalized';
-      stageBadge.innerHTML = '<span>🎉 規劃已確定完成（如需存檔請點擊換下位）</span>';
+      stageBadge.innerHTML = '<span>🎉 規劃已確認完成（可點擊存檔並換下位）</span>';
 
       createSliders();
 
-      // 時間若已過 21:00，畫面才會讓使用者看見焦慮按鈕
       if (isNightTime()) {
         anxietyBtn.classList.add('revealed');
       }
@@ -1285,61 +1295,58 @@
       });
     }
 
-    // 3. 換下位同學：無論時間為何，皆自動依序截取「規劃版」與「焦慮版」兩張圖檔
+    // 3. 換下位同學：雙學期完成後點擊，依序截取「規劃版」與「焦慮版」雙圖檔並重置
     clearAllBtn.addEventListener('click', async () => {
-      const currentSum = stats.reduce((sum, s) => sum + s.value, 0);
-      const prevSum = previousStats ? previousStats.reduce((sum, s) => sum + s.value, 0) : 0;
-      const userName = currentUserName || '未命名規劃師';
-
-      if (currentSum > 0 || prevSum > 0) {
-        const confirmSave = confirm(`即將自動保存【${userName}】的「雙學期規劃版」與「無意識焦慮版」雙圖檔，是否繼續？`);
-        if (!confirmSave) return;
-
-        const now = new Date();
-        const dateStr = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getDate().toString().padStart(2,'0')}_${now.getHours().toString().padStart(2,'0')}${now.getMinutes().toString().padStart(2,'0')}`;
-
-        // 紀錄當前使用者是否處於焦慮狀態
-        const originalAnxietyState = isAnxietyMode;
-
-        // --- 截圖 1：正常雙學期規劃版 ---
-        if (isAnxietyMode) {
-          isAnxietyMode = false;
-          document.body.classList.remove('anxiety-mode');
-          createSliders();
-          updateChart();
-          await new Promise(r => setTimeout(r, 100));
-        }
-
-        const canvasNormal = await html2canvas(captureContainer, {
-          backgroundColor: '#090a10',
-          scale: 2,
-          useCORS: true
-        });
-        await downloadCanvas(canvasNormal, `解憂Bar_${userName}_雙學期規劃_${dateStr}.png`);
-
-        // --- 截圖 2：焦慮侵蝕版 ---
-        isAnxietyMode = true;
-        document.body.classList.add('anxiety-mode');
-        document.getElementById('legendCurrentText').textContent = '下學期 (萎縮)';
-        if (previousStats) {
-          document.getElementById('legendPrevText').textContent = '上學期 (萎縮)';
-        }
-        createSliders();
-        updateChart();
-        await new Promise(r => setTimeout(r, 150));
-
-        const canvasAnxiety = await html2canvas(captureContainer, {
-          backgroundColor: '#090a10',
-          scale: 2,
-          useCORS: true
-        });
-        await downloadCanvas(canvasAnxiety, `解憂Bar_${userName}_無意識焦慮侵蝕_${dateStr}.png`);
-
-        // 截圖結束，還原為正常模式
-        document.body.classList.remove('anxiety-mode');
+      // 雙重保險防呆：必須確認完成
+      if (!isFinalized || !previousStats) {
+        alert('請先完成雙學期規劃並按下確認後才能存檔喔！');
+        return;
       }
 
-      // 重置所有資料與回到起始彈窗
+      const userName = currentUserName || '未命名規劃師';
+      const confirmSave = confirm(`即將自動保存【${userName}】的「雙學期規劃版」與「無意識焦慮版」雙圖檔，並清空換下一位，是否繼續？`);
+      if (!confirmSave) return;
+
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getDate().toString().padStart(2,'0')}_${now.getHours().toString().padStart(2,'0')}${now.getMinutes().toString().padStart(2,'0')}`;
+
+      // --- 截圖 1：正常雙學期規劃版 ---
+      if (isAnxietyMode) {
+        isAnxietyMode = false;
+        document.body.classList.remove('anxiety-mode');
+        createSliders();
+        updateChart();
+        await new Promise(r => setTimeout(r, 100));
+      }
+
+      const canvasNormal = await html2canvas(captureContainer, {
+        backgroundColor: '#090a10',
+        scale: 2,
+        useCORS: true
+      });
+      await downloadCanvas(canvasNormal, `解憂Bar_${userName}_雙學期規劃_${dateStr}.png`);
+
+      // --- 截圖 2：焦慮侵蝕版 ---
+      isAnxietyMode = true;
+      document.body.classList.add('anxiety-mode');
+      document.getElementById('legendCurrentText').textContent = '下學期 (萎縮)';
+      if (previousStats) {
+        document.getElementById('legendPrevText').textContent = '上學期 (萎縮)';
+      }
+      createSliders();
+      updateChart();
+      await new Promise(r => setTimeout(r, 150));
+
+      const canvasAnxiety = await html2canvas(captureContainer, {
+        backgroundColor: '#090a10',
+        scale: 2,
+        useCORS: true
+      });
+      await downloadCanvas(canvasAnxiety, `解憂Bar_${userName}_無意識焦慮侵蝕_${dateStr}.png`);
+
+      document.body.classList.remove('anxiety-mode');
+
+      // 重置所有資料回到起始狀態
       isAnxietyMode = false;
       previousStats = null;
       isFinalized = false;
@@ -1352,6 +1359,9 @@
 
       confirmBtn.disabled = true;
       document.getElementById('confirmBtnText').textContent = '確認精神規劃';
+
+      // 重新禁用存檔按鈕
+      clearAllBtn.disabled = true;
 
       anxietyBtn.classList.remove('revealed');
 
@@ -1368,12 +1378,12 @@
       createSliders();
       updateChart();
 
-      // 重新顯示歡迎輸入彈窗，迎接下一位同學
+      // 重新顯示歡迎輸入彈窗
       welcomeNameInput.value = '';
       welcomeOverlay.classList.remove('hidden');
     });
 
-    // 4. 焦慮模式手動切換（僅限 21:00 後在畫面現形時可用）
+    // 4. 焦慮模式切換
     anxietyBtn.addEventListener('click', () => {
       isAnxietyMode = !isAnxietyMode;
 
@@ -1397,7 +1407,7 @@
         
         const stageBadge = document.getElementById('stageBadge');
         stageBadge.className = 'stage-badge finalized';
-        stageBadge.innerHTML = '<span>🎉 規劃已確定完成（如需存檔請點擊換下位）</span>';
+        stageBadge.innerHTML = '<span>🎉 規劃已確定完成（可點擊存檔並換下位）</span>';
         document.getElementById('legendPrevText').textContent = '上學期基準';
 
         document.getElementById('pointsLabel').textContent = '剩餘時間';
