@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>解憂 Bar - 5維時間點數雷達圖</title>
+  <title>解憂 Bar - 5維精神力點數雷達圖</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -51,6 +51,7 @@
         #050002;
     }
 
+    /* 歡迎入口彈窗 */
     .welcome-overlay {
       position: fixed;
       inset: 0;
@@ -82,12 +83,13 @@
       display: flex;
       flex-direction: column;
       gap: 20px;
+      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
     .welcome-card h1 {
       font-size: 26px;
       color: var(--neon-pink);
-      text-shadow: 0 0 10px var(--neon-pink);
+      text-shadow: 0 0 10px var(--neon-pink), 0 0 20px var(--neon-pink);
       letter-spacing: 2px;
     }
 
@@ -111,6 +113,10 @@
       text-shadow: 0 0 4px #fff;
       box-shadow: 0 0 12px rgba(188, 46, 255, 0.25);
     }
+    .welcome-input:focus {
+      border-color: var(--neon-blue);
+      box-shadow: 0 0 18px rgba(46, 151, 255, 0.5);
+    }
 
     .start-btn {
       width: 100%;
@@ -126,6 +132,11 @@
       text-shadow: 0 0 6px var(--neon-pink);
       transition: all 0.2s ease;
     }
+    .start-btn:hover {
+      background: rgba(255, 46, 136, 0.3);
+      box-shadow: 0 0 24px rgba(255, 46, 136, 0.6);
+      transform: translateY(-2px);
+    }
 
     .ambient-icon {
       position: fixed;
@@ -135,6 +146,7 @@
       opacity: 0.22;
       filter: drop-shadow(0 0 10px currentColor);
       z-index: 0;
+      transition: all 0.5s ease;
     }
     .amb-disc { top: 12%; left: 3%; width: 70px; height: 70px; color: var(--neon-purple); transform: rotate(-15deg); }
     .amb-note { bottom: 15%; left: 4%; width: 55px; height: 55px; color: var(--neon-yellow); transform: rotate(10deg); }
@@ -157,183 +169,683 @@
       color: #fff;
       text-shadow: 0 0 8px var(--neon-pink);
       letter-spacing: 2px;
+      animation: neonFlicker 4.5s infinite alternate;
       z-index: 2;
       margin-bottom: 24px;
+      transition: all 0.4s ease;
     }
 
     body.anxiety-mode .bar-sign {
       border-color: var(--neon-red);
       box-shadow: 0 0 25px var(--neon-red), inset 0 0 15px rgba(255, 42, 42, 0.5);
       text-shadow: 0 0 10px var(--neon-red);
+      animation: panicGlitch 1s infinite;
     }
 
-    .sign-mini-icon { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; }
+    .sign-mini-icon {
+      width: 24px;
+      height: 24px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    @keyframes neonFlicker {
+      0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+        box-shadow: 0 0 22px var(--neon-pink), inset 0 0 12px rgba(255, 46, 136, 0.35);
+        border-color: var(--neon-pink);
+      }
+      20%, 24%, 55% {
+        box-shadow: 0 0 5px rgba(255, 46, 136, 0.3);
+        border-color: rgba(255, 46, 136, 0.4);
+      }
+    }
+
+    @keyframes panicGlitch {
+      0%, 100% { transform: translate(0, 0); }
+      20% { transform: translate(-3px, 2px); }
+      40% { transform: translate(3px, -1px); }
+      60% { transform: translate(-2px, -2px); }
+      80% { transform: translate(2px, 2px); }
+    }
 
     .container {
-      background: rgba(13, 16, 25, 0.92);
+      background: rgba(13, 16, 25, 0.88);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border-radius: 32px;
       border: 2px solid rgba(188, 46, 255, 0.45);
-      box-shadow: 0 0 40px rgba(188, 46, 255, 0.28), 0 25px 50px rgba(0,0,0,0.85);
-      padding: 40px 46px;
+      box-shadow: 
+        0 0 40px rgba(188, 46, 255, 0.28), 
+        0 25px 50px rgba(0,0,0,0.85),
+        inset 0 0 25px rgba(188, 46, 255, 0.12);
+      padding: 44px 48px;
       display: flex;
       flex-direction: row;
-      gap: 46px;
+      gap: 50px;
       align-items: center;
       max-width: 1360px;
       width: 100%;
       position: relative;
+      overflow: hidden;
+      z-index: 1;
+      transition: all 0.4s ease;
+    }
+
+    body.anxiety-mode .container, .container.fake-anxiety {
+      border-color: rgba(255, 42, 42, 0.6) !important;
+      box-shadow: 0 0 45px rgba(255, 42, 42, 0.35), inset 0 0 25px rgba(255, 0, 0, 0.15) !important;
+    }
+    
+    .container::before {
+      content: '';
+      position: absolute;
+      top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background: radial-gradient(circle, rgba(255, 46, 136, 0.06) 0%, rgba(46, 151, 255, 0.04) 35%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .bg-icon {
+      position: absolute;
+      fill: none;
+      stroke-width: 1.8;
+      pointer-events: none;
+      opacity: 0.18;
+      transition: all 0.3s ease;
+    }
+    .bg-cocktail { top: 22px; right: 28px; width: 70px; height: 70px; stroke: var(--neon-pink); filter: drop-shadow(0 0 10px var(--neon-pink)); transform: rotate(12deg); }
+    .bg-beer { bottom: 25px; right: 40px; width: 62px; height: 62px; stroke: var(--neon-yellow); filter: drop-shadow(0 0 10px var(--neon-yellow)); transform: rotate(-8deg); }
+    .bg-sparkle1 { top: 28%; left: 45%; width: 28px; height: 28px; stroke: var(--neon-blue); filter: drop-shadow(0 0 8px var(--neon-blue)); }
+    .bg-heart { bottom: 20px; left: 28px; width: 55px; height: 55px; stroke: var(--neon-purple); filter: drop-shadow(0 0 10px var(--neon-purple)); }
+
+    .controls {
+      flex: 1.1;
+      min-width: 360px;
+      display: flex;
+      flex-direction: column;
+      gap: 13px;
+      position: relative;
       z-index: 1;
     }
 
-    body.anxiety-mode .container {
-      border-color: rgba(255, 42, 42, 0.6);
-      box-shadow: 0 0 45px rgba(255, 42, 42, 0.35);
+    .title-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
 
-    .bg-icon { position: absolute; fill: none; stroke-width: 1.8; pointer-events: none; opacity: 0.18; }
-    .bg-cocktail { top: 22px; right: 28px; width: 70px; height: 70px; stroke: var(--neon-pink); }
-    .bg-beer { bottom: 25px; right: 40px; width: 62px; height: 62px; stroke: var(--neon-yellow); }
-    .bg-sparkle1 { top: 28%; left: 45%; width: 28px; height: 28px; stroke: var(--neon-blue); }
-    .bg-heart { bottom: 20px; left: 28px; width: 55px; height: 55px; stroke: var(--neon-purple); }
+    .title-icon {
+      width: 34px;
+      height: 34px;
+      stroke: var(--neon-pink);
+      filter: drop-shadow(0 0 8px var(--neon-pink));
+      transition: stroke 0.3s ease;
+    }
 
-    .controls { flex: 1.1; min-width: 360px; display: flex; flex-direction: column; gap: 12px; z-index: 1; }
-    .title-box { display: flex; align-items: center; gap: 12px; }
-    .title-icon { width: 34px; height: 34px; stroke: var(--neon-pink); }
-    body.anxiety-mode .title-icon { stroke: var(--neon-red); }
+    body.anxiety-mode .title-icon, .fake-anxiety .title-icon {
+      stroke: var(--neon-red) !important;
+      filter: drop-shadow(0 0 8px var(--neon-red)) !important;
+    }
 
-    h2 { font-size: 24px; font-weight: 700; color: var(--neon-pink); text-shadow: 0 0 8px var(--neon-pink); }
-    body.anxiety-mode h2 { color: var(--neon-red); text-shadow: 0 0 8px var(--neon-red); }
+    h2 {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--neon-pink);
+      text-shadow: 0 0 8px var(--neon-pink), 0 0 18px var(--neon-pink);
+      letter-spacing: 1px;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+    }
 
-    .subtitle { font-size: 13.5px; color: rgba(255, 255, 255, 0.7); }
-    body.anxiety-mode .subtitle { color: #ff9999; }
+    body.anxiety-mode h2, .fake-anxiety h2 {
+      color: var(--neon-red) !important;
+      text-shadow: 0 0 8px var(--neon-red), 0 0 18px var(--neon-red) !important;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.7);
+      text-shadow: 0 0 3px rgba(255, 255, 255, 0.4);
+      margin-top: 2px;
+      transition: color 0.3s ease;
+    }
+
+    body.anxiety-mode .subtitle, .fake-anxiety .subtitle {
+      color: #ff9999 !important;
+    }
 
     .stage-badge {
-      display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 8px;
-      font-size: 13px; font-weight: 700; background: rgba(46, 151, 255, 0.15); border: 1px solid var(--neon-blue);
-      color: var(--neon-blue); width: fit-content;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      background: rgba(46, 151, 255, 0.15);
+      border: 1px solid var(--neon-blue);
+      color: var(--neon-blue);
+      text-shadow: 0 0 6px var(--neon-blue);
+      width: fit-content;
+      margin-top: 2px;
+      transition: all 0.3s ease;
     }
-    .stage-badge.comparing { background: rgba(0, 245, 212, 0.15); border-color: var(--neon-cyan); color: var(--neon-cyan); }
-    .stage-badge.finalized { background: rgba(57, 255, 20, 0.15); border-color: var(--neon-green); color: var(--neon-green); }
-    body.anxiety-mode .stage-badge { background: rgba(255, 42, 42, 0.2); border-color: var(--neon-red); color: var(--neon-red); }
+
+    .stage-badge.comparing {
+      background: rgba(0, 245, 212, 0.15);
+      border-color: var(--neon-cyan);
+      color: var(--neon-cyan);
+      text-shadow: 0 0 6px var(--neon-cyan);
+    }
+
+    .stage-badge.finalized {
+      background: rgba(57, 255, 20, 0.15);
+      border-color: var(--neon-green);
+      color: var(--neon-green);
+      text-shadow: 0 0 6px var(--neon-green);
+    }
+
+    body.anxiety-mode .stage-badge, .fake-anxiety .stage-badge {
+      background: rgba(255, 42, 42, 0.2) !important;
+      border-color: var(--neon-red) !important;
+      color: var(--neon-red) !important;
+      text-shadow: 0 0 8px var(--neon-red) !important;
+    }
 
     .stat-row {
-      display: flex; flex-direction: column; gap: 6px; background: rgba(255, 255, 255, 0.02);
-      padding: 7px 12px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.02);
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: all 0.3s ease;
     }
-    body.anxiety-mode .stat-row { border-color: rgba(255, 50, 50, 0.2); background: rgba(255, 0, 0, 0.03); }
 
-    .stat-header { display: flex; justify-content: space-between; align-items: center; font-size: 14.5px; font-weight: 600; color: #f1f5f9; }
-    .stat-title { display: flex; align-items: center; gap: 8px; }
-    .stat-icon { width: 18px; height: 18px; stroke-width: 2; fill: none; }
+    body.anxiety-mode .stat-row, .fake-anxiety .stat-row {
+      border-color: rgba(255, 50, 50, 0.2) !important;
+      background: rgba(255, 0, 0, 0.03) !important;
+    }
+
+    .stat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 15px;
+      font-weight: 600;
+      color: #f1f5f9;
+    }
+
+    .stat-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stat-icon {
+      width: 18px;
+      height: 18px;
+      stroke-width: 2;
+      fill: none;
+      filter: drop-shadow(0 0 5px currentColor);
+    }
 
     .stat-val-box {
-      display: flex; align-items: center; gap: 6px; background: rgba(6, 8, 14, 0.85);
-      padding: 2px 10px; border-radius: 8px; border: 1px solid rgba(46, 151, 255, 0.35);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(6, 8, 14, 0.85);
+      padding: 2px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(46, 151, 255, 0.35);
     }
-    .stat-val { color: var(--neon-blue); font-weight: 700; font-size: 15.5px; font-family: monospace; }
-    body.anxiety-mode .stat-val { color: #ff7777; }
-    .prev-val-tag { font-size: 12px; color: #94a3b8; font-weight: 500; }
+
+    .stat-val {
+      color: var(--neon-blue);
+      font-weight: 700;
+      font-size: 16px;
+      text-shadow: 0 0 6px var(--neon-blue);
+      font-family: 'Courier New', Courier, monospace;
+    }
+
+    body.anxiety-mode .stat-val, .fake-anxiety .stat-val {
+      color: #ff7777 !important;
+      text-shadow: 0 0 6px #ff4444 !important;
+    }
+
+    .prev-val-tag {
+      font-size: 12px;
+      color: #94a3b8;
+      font-weight: 500;
+    }
 
     input[type="range"] {
-      width: 100%; height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 4px; outline: none; -webkit-appearance: none;
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      outline: none;
+      -webkit-appearance: none;
+      cursor: pointer;
     }
+    
     input[type="range"]::-webkit-slider-runnable-track {
-      background: linear-gradient(90deg, var(--neon-blue) 0%, var(--neon-purple) 100%); height: 8px; border-radius: 4px;
+      background: linear-gradient(90deg, var(--neon-blue) 0%, var(--neon-purple) 100%);
+      height: 8px;
+      border-radius: 4px;
+      box-shadow: 0 0 10px rgba(46, 151, 255, 0.4);
     }
+
+    body.anxiety-mode input[type="range"]::-webkit-slider-runnable-track {
+      background: linear-gradient(90deg, #551111 0%, #aa2222 100%);
+      box-shadow: 0 0 10px rgba(255, 42, 42, 0.2);
+    }
+
     input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #ffffff; border: 2.5px solid var(--neon-blue); margin-top: -7px;
+      -webkit-appearance: none;
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 2.5px solid var(--neon-blue);
+      cursor: pointer;
+      margin-top: -7px;
+      box-shadow: 0 0 8px #ffffff, 0 0 18px var(--neon-blue);
+      transition: box-shadow 0.15s ease-in-out;
+    }
+
+    body.anxiety-mode input[type="range"]::-webkit-slider-thumb {
+      border-color: var(--neon-red);
+      background: #ffaaaa;
+      box-shadow: 0 0 8px #ffffff, 0 0 18px var(--neon-red);
     }
 
     .points-box {
-      margin-top: 2px; padding: 10px 14px; background: rgba(0, 0, 0, 0.5); border-radius: 12px;
-      border: 2px solid var(--neon-green); display: flex; justify-content: space-between; align-items: center;
-      font-size: 14.5px; font-weight: 700; color: var(--neon-green); font-family: monospace;
+      margin-top: 2px;
+      padding: 12px 16px;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 12px;
+      border: 2px solid var(--neon-green);
+      box-shadow: 0 0 16px rgba(57, 255, 20, 0.28), inset 0 0 10px rgba(57, 255, 20, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--neon-green);
+      text-shadow: 0 0 6px var(--neon-green), 0 0 12px var(--neon-green);
+      font-family: 'Courier New', Courier, monospace;
+      transition: all 0.3s ease;
     }
-    body.anxiety-mode .points-box { border-color: var(--neon-red); color: var(--neon-red); }
 
-    .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
+    body.anxiety-mode .points-box, .fake-anxiety .points-box {
+      border-color: var(--neon-red) !important;
+      color: var(--neon-red) !important;
+      text-shadow: 0 0 6px var(--neon-red) !important;
+      box-shadow: 0 0 18px rgba(255, 42, 42, 0.4) !important;
+    }
+
+    .points-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .points-icon {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .btn-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
     .action-btn {
-      display: flex; align-items: center; justify-content: center; gap: 6px; padding: 11px 12px;
-      border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; outline: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 11px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      outline: none;
+      transition: all 0.2s ease;
+      white-space: nowrap;
     }
+
     .lock-prev-btn {
-      grid-column: span 2; background: rgba(0, 245, 212, 0.12); border: 1.5px solid var(--neon-cyan); color: var(--neon-cyan);
+      grid-column: span 2;
+      background: rgba(0, 245, 212, 0.12);
+      border: 1.5px solid var(--neon-cyan);
+      color: var(--neon-cyan);
+      box-shadow: 0 0 14px rgba(0, 245, 212, 0.25);
+      text-shadow: 0 0 6px var(--neon-cyan);
+      font-size: 14px;
     }
+    .lock-prev-btn:hover {
+      background: rgba(0, 245, 212, 0.25);
+      box-shadow: 0 0 22px rgba(0, 245, 212, 0.6);
+      transform: translateY(-1px);
+    }
+
     .confirm-btn {
-      background: rgba(57, 255, 20, 0.1); border: 1.5px solid var(--neon-green); color: var(--neon-green);
+      background: rgba(57, 255, 20, 0.1);
+      border: 1.5px solid var(--neon-green);
+      color: var(--neon-green);
+      box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
+      text-shadow: 0 0 6px var(--neon-green);
+    }
+    .confirm-btn:not(:disabled):hover {
+      background: rgba(57, 255, 20, 0.25);
+      box-shadow: 0 0 18px rgba(57, 255, 20, 0.5);
+      transform: translateY(-1px);
     }
     .confirm-btn:disabled, .clear-all-btn:disabled {
-      opacity: 0.35; cursor: not-allowed; border-color: #475569; color: #64748b;
+      opacity: 0.35;
+      cursor: not-allowed;
+      border-color: #475569;
+      color: #64748b;
+      box-shadow: none;
+      text-shadow: none;
     }
+
     .clear-all-btn {
-      background: rgba(148, 163, 184, 0.1); border: 1.5px solid #94a3b8; color: #e2e8f0;
+      background: rgba(148, 163, 184, 0.1);
+      border: 1.5px solid #94a3b8;
+      color: #e2e8f0;
+      box-shadow: 0 0 10px rgba(148, 163, 184, 0.2);
+    }
+    .clear-all-btn:not(:disabled):hover {
+      background: rgba(148, 163, 184, 0.25);
+      box-shadow: 0 0 18px rgba(255, 255, 255, 0.4);
+      transform: translateY(-1px);
     }
 
     .floating-anxiety-btn {
-      position: fixed; right: 28px; bottom: 28px; z-index: 100; display: none; align-items: center; gap: 10px;
-      padding: 14px 22px; border-radius: 50px; font-size: 15px; font-weight: 800; cursor: pointer;
-      background: rgba(20, 10, 15, 0.85); border: 2px solid var(--neon-red); color: var(--neon-red);
+      position: fixed;
+      right: 28px;
+      bottom: 28px;
+      z-index: 100;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 22px;
+      border-radius: 50px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      outline: none;
+      background: rgba(20, 10, 15, 0.85);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 2px solid var(--neon-red);
+      color: var(--neon-red);
+      box-shadow: 0 0 20px rgba(255, 42, 42, 0.35), 0 8px 20px rgba(0,0,0,0.6);
+      text-shadow: 0 0 8px var(--neon-red);
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-    .floating-anxiety-btn.revealed { display: flex; }
-    body.anxiety-mode .floating-anxiety-btn { border-color: var(--neon-green); color: var(--neon-green); }
 
-    .btn-icon { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 2; }
+    .floating-anxiety-btn.revealed {
+      display: flex;
+      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.5) translateY(20px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .floating-anxiety-btn:hover {
+      transform: translateY(-3px) scale(1.04);
+      background: rgba(255, 42, 42, 0.25);
+      box-shadow: 0 0 30px rgba(255, 42, 42, 0.7), 0 12px 25px rgba(0,0,0,0.8);
+    }
+
+    body.anxiety-mode .floating-anxiety-btn {
+      border-color: var(--neon-green);
+      color: var(--neon-green);
+      text-shadow: 0 0 8px var(--neon-green);
+      box-shadow: 0 0 20px rgba(57, 255, 20, 0.4);
+    }
+    body.anxiety-mode .floating-anxiety-btn:hover {
+      background: rgba(57, 255, 20, 0.25);
+      box-shadow: 0 0 30px rgba(57, 255, 20, 0.8);
+    }
+
+    .btn-icon {
+      width: 17px;
+      height: 17px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      flex-shrink: 0;
+    }
 
     .chart-container {
-      flex: 1.3; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; position: relative;
+      flex: 1.3;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      position: relative;
     }
 
     .chart-legend {
-      display: flex; gap: 20px; margin-bottom: 12px; background: rgba(0, 0, 0, 0.4); padding: 6px 16px;
-      border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); font-size: 13px; font-weight: 600;
+      display: flex;
+      gap: 20px;
+      margin-bottom: 12px;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 6px 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 13px;
+      font-weight: 600;
+      flex-wrap: wrap;
+      justify-content: center;
     }
-    .legend-item { display: flex; align-items: center; gap: 8px; }
-    .legend-line-current { width: 24px; height: 3.5px; background: var(--neon-blue); }
-    .legend-line-prev { width: 24px; height: 2.5px; border-top: 2.5px dashed #94a3b8; }
 
-    /* 明確宣告 SVG 寬度與高度以修復 Safari 截圖空白問題 */
-    svg#radarSvg {
-      width: 100%; max-width: 600px; height: 600px; overflow: visible;
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
-    .grid-line { fill: none; stroke: var(--neon-purple); stroke-width: 1.6; stroke-opacity: 0.7; }
-    body.anxiety-mode .grid-line { stroke: #ff2a2a; stroke-opacity: 0.85; }
+    .legend-line-current {
+      width: 24px;
+      height: 3.5px;
+      background: var(--neon-blue);
+      box-shadow: 0 0 8px var(--neon-blue);
+      border-radius: 2px;
+    }
 
-    .axis-line { stroke: rgba(255, 255, 255, 0.3); stroke-width: 1.4; stroke-dasharray: 4 4; }
-    body.anxiety-mode .axis-line { stroke: rgba(255, 68, 68, 0.4); }
+    .legend-line-prev {
+      width: 24px;
+      height: 2.5px;
+      border-top: 2.5px dashed #94a3b8;
+      box-shadow: 0 0 6px #cbd5e1;
+    }
 
-    .inward-vortex-layer { opacity: 0; pointer-events: none; transition: opacity 0.8s ease; }
-    body.anxiety-mode .inward-vortex-layer { opacity: 1; }
+    svg.radar-svg-el {
+      width: 100%;
+      max-width: 600px;
+      height: 600px;
+      overflow: visible;
+      filter: drop-shadow(0 0 14px rgba(188, 46, 255, 0.4));
+      transition: filter 0.5s ease;
+    }
 
-    .vortex-inflow-ring { fill: none; stroke: #ff2a2a; stroke-dasharray: 6 6 12 6; transform-origin: 300px 300px; }
-    .vortex-inflow-1 { stroke-width: 1.6; animation: inwardSuck 3.2s infinite linear; }
-    .vortex-inflow-2 { stroke-width: 1.3; stroke: #ff0055; stroke-dasharray: 4 6 8 4; animation: inwardSuck 4.2s infinite linear reverse; }
-    .vortex-inflow-3 { stroke-width: 1.8; stroke: #bc2eff; animation: inwardSuck 5.5s infinite linear; }
+    body.anxiety-mode svg.radar-svg-el, .fake-anxiety svg.radar-svg-el {
+      filter: drop-shadow(0 0 18px rgba(255, 42, 42, 0.6)) !important;
+    }
+
+    /* 正常網格線條 */
+    .grid-line {
+      fill: none;
+      stroke: var(--neon-purple);
+      stroke-width: 1.6;
+      stroke-opacity: 0.7;
+      transition: stroke 0.5s ease, stroke-opacity 0.5s ease;
+    }
+
+    /* 焦慮模式網格警示律動動畫 */
+    body.anxiety-mode .grid-line, .fake-anxiety .grid-line {
+      stroke: #ff2a2a !important;
+      stroke-opacity: 0.85 !important;
+      animation: gridPulse 2.5s infinite alternate ease-in-out;
+    }
+
+    @keyframes gridPulse {
+      0% {
+        stroke-opacity: 0.4;
+        stroke: #990022;
+      }
+      100% {
+        stroke-opacity: 0.95;
+        stroke: #ff3355;
+      }
+    }
+
+    .axis-line {
+      stroke: rgba(255, 255, 255, 0.3);
+      stroke-width: 1.4;
+      stroke-dasharray: 4 4;
+      transition: stroke 0.5s ease;
+    }
+
+    body.anxiety-mode .axis-line, .fake-anxiety .axis-line {
+      stroke: rgba(255, 68, 68, 0.4) !important;
+    }
+
+    .inward-vortex-layer {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.8s ease;
+      mix-blend-mode: screen;
+    }
+
+    body.anxiety-mode .inward-vortex-layer, .fake-anxiety .inward-vortex-layer {
+      opacity: 1 !important;
+    }
+
+    .vortex-inflow-ring {
+      fill: none;
+      stroke: #ff2a2a;
+      stroke-dasharray: 6 6 12 6;
+      transform-origin: 300px 300px;
+    }
+
+    .vortex-inflow-1 { stroke-width: 1.6; animation: inwardSuck 3.2s infinite linear; opacity: 0.65; }
+    .vortex-inflow-2 { stroke-width: 1.3; stroke: #ff0055; stroke-dasharray: 4 6 8 4; animation: inwardSuck 4.2s infinite linear reverse; animation-delay: -1.2s; opacity: 0.55; }
+    .vortex-inflow-3 { stroke-width: 1.8; stroke: #bc2eff; animation: inwardSuck 5.5s infinite linear; animation-delay: -2.4s; opacity: 0.45; }
 
     @keyframes inwardSuck {
-      0% { transform: scale(1.2) rotate(0deg); opacity: 0.75; }
-      100% { transform: scale(0.1) rotate(360deg); opacity: 0; }
+      0% { transform: scale(1.2) rotate(0deg); opacity: 0.75; stroke-width: 2px; }
+      50% { opacity: 0.45; }
+      100% { transform: scale(0.1) rotate(360deg); opacity: 0; stroke-width: 0.6px; }
     }
 
-    .radar-area-prev { fill: rgba(148, 163, 184, 0.12); stroke: #cbd5e1; stroke-width: 2.5; stroke-dasharray: 6 4; }
-    body.anxiety-mode .radar-area-prev { fill: rgba(148, 163, 184, 0.08); stroke: #8899aa; stroke-dasharray: 4 3; }
+    .radar-area-prev {
+      fill: rgba(148, 163, 184, 0.12);
+      stroke: #cbd5e1;
+      stroke-width: 2.5;
+      stroke-dasharray: 6 4;
+      filter: drop-shadow(0 0 6px rgba(203, 213, 225, 0.6));
+      transition: points 0.8s cubic-bezier(0.55, 0, 0.1, 1), stroke 0.4s ease, fill 0.4s ease;
+    }
 
-    .radar-point-prev { fill: #ffffff; stroke: #94a3b8; stroke-width: 2; }
-    .radar-area { fill: rgba(46, 151, 255, 0.24); stroke: var(--neon-blue); stroke-width: 3.8; }
-    body.anxiety-mode .radar-area { fill: rgba(46, 151, 255, 0.16); stroke: #4488cc; stroke-dasharray: 5 3; }
+    body.anxiety-mode .radar-area-prev, .fake-anxiety .radar-area-prev {
+      fill: rgba(148, 163, 184, 0.08) !important;
+      stroke: #8899aa !important;
+      stroke-dasharray: 4 3 !important;
+      filter: drop-shadow(0 0 4px rgba(136, 153, 170, 0.5)) !important;
+    }
 
-    .radar-point { fill: #ffffff; stroke: var(--neon-blue); stroke-width: 2.8; }
-    .stat-label { font-size: 14px; font-weight: 700; fill: var(--text-color); }
-    body.anxiety-mode .stat-label { fill: #ffb4b4; }
-    .svg-node-icon { stroke-width: 2; fill: none; }
+    .radar-point-prev {
+      fill: #ffffff;
+      stroke: #94a3b8;
+      stroke-width: 2;
+      transition: all 0.8s cubic-bezier(0.55, 0, 0.1, 1);
+    }
+
+    body.anxiety-mode .radar-point-prev, .fake-anxiety .radar-point-prev {
+      stroke: #8899aa !important;
+      r: 3.8;
+    }
+
+    .radar-area {
+      fill: rgba(46, 151, 255, 0.24);
+      stroke: var(--neon-blue);
+      stroke-width: 3.8;
+      filter: drop-shadow(0 0 12px var(--neon-blue));
+      transition: points 0.8s cubic-bezier(0.55, 0, 0.1, 1), stroke 0.4s ease, fill 0.4s ease;
+    }
+
+    body.anxiety-mode .radar-area, .fake-anxiety .radar-area {
+      fill: rgba(46, 151, 255, 0.16) !important;
+      stroke: #4488cc !important;
+      stroke-dasharray: 5 3 !important;
+      filter: drop-shadow(0 0 6px rgba(68, 136, 204, 0.6)) !important;
+    }
+
+    .radar-point {
+      fill: #ffffff;
+      stroke: var(--neon-blue);
+      stroke-width: 2.8;
+      filter: drop-shadow(0 0 8px #ffffff);
+      transition: all 0.8s cubic-bezier(0.55, 0, 0.1, 1);
+    }
+
+    body.anxiety-mode .radar-point, .fake-anxiety .radar-point {
+      stroke: #4488cc !important;
+      r: 4.2;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      font-weight: 700;
+      fill: var(--text-color);
+      text-shadow: 0 0 6px rgba(255, 255, 255, 0.85);
+      transition: fill 0.3s ease;
+    }
+
+    body.anxiety-mode .stat-label, .fake-anxiety .stat-label {
+      fill: #ffb4b4 !important;
+      text-shadow: 0 0 6px #ff2a2a !important;
+    }
+
+    .svg-node-icon {
+      stroke-width: 2;
+      fill: none;
+    }
 
     @media (max-width: 960px) {
       .ambient-icon { display: none; }
-      .container { flex-direction: column-reverse; padding: 28px 20px; gap: 30px; }
+      .bar-sign { font-size: 18px; padding: 8px 20px; }
+      .container {
+        flex-direction: column-reverse;
+        padding: 28px 20px;
+        gap: 30px;
+      }
       .controls { width: 100%; min-width: 100%; }
-      svg#radarSvg { max-width: 440px; height: 440px; }
+      svg.radar-svg-el { max-width: 440px; height: 440px; }
+      .floating-anxiety-btn {
+        right: 16px;
+        bottom: 16px;
+        padding: 10px 16px;
+        font-size: 13px;
+      }
     }
   </style>
 </head>
@@ -344,53 +856,67 @@
       <div style="display:flex; justify-content:center;">
         <svg viewBox="0 0 24 24" width="36" height="36" stroke="var(--neon-pink)" fill="none" stroke-width="2"><path d="M8 22h8M12 15v7M3 4l9 11 9-11H3zM5.5 7h13"/></svg>
       </div>
-      <h1>解憂 BAR 入口</h1>
+      <h1>精神調配所入口</h1>
       <p>歡迎來到精神調配所。在開始前，請留下你的名字或專屬代號：</p>
       <input type="text" id="welcomeNameInput" class="welcome-input" placeholder="輸入你的名字..." autofocus />
       <button class="start-btn" id="startPlanningBtn">🍸 進入調配吧檯</button>
     </div>
   </div>
 
+  <svg class="ambient-icon amb-disc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><path d="M12 2a10 10 0 0 0-4 1"/><path d="M12 22a10 10 0 0 0 4-1"/></svg>
+  <svg class="ambient-icon amb-note" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+  <svg class="ambient-icon amb-candle" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 8h10v9H7zM12 3a2 2 0 0 1 2 2c0 1.5-2 3-2 3s-2-1.5-2-3a2 2 0 0 1 2-2z"/></svg>
+  <svg class="ambient-icon amb-stars" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+
   <div class="bar-sign" id="barSign">
     <svg class="sign-mini-icon" viewBox="0 0 24 24"><path d="M8 22h8M12 15v7M3 4l9 11 9-11H3z"/></svg>
-    <span id="signText">🍸 地下解憂Bar 之精神分配</span>
+    <span id="signText">🍸 地下解憂Bar 之精神調配</span>
     <svg class="sign-mini-icon" viewBox="0 0 24 24"><path d="m12 3 2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></svg>
   </div>
 
   <div class="container" id="captureContainer">
+    <svg class="bg-icon bg-cocktail" viewBox="0 0 24 24"><path d="M8 22h8M12 15v7M3 4l9 11 9-11H3zM5.5 7h13"/></svg>
+    <svg class="bg-icon bg-beer" viewBox="0 0 24 24"><path d="M17 11h1a3 3 0 0 1 0 6h-1M5 8h12v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8zM5 8a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2M8 12v5M12 12v5"/></svg>
+    <svg class="bg-icon bg-sparkle1" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+    <svg class="bg-icon bg-heart" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+
     <div class="controls">
       <div>
         <div class="title-box">
           <svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M8 22h8M12 15v7M3 4l9 11 9-11H3zM5.5 7h13"/></svg>
-          <h2 id="mainTitle">時間點數分配</h2>
+          <h2 id="mainTitle">精神力調配</h2>
         </div>
         <div class="stage-badge" id="stageBadge">
-          <span>階段 1：設定【上學期】實際分配</span>
+          <span>階段 1：設定【上學期】實際調配</span>
         </div>
-        <p class="subtitle" id="mainSubtitle">拖曳滑桿分配時間（每項上限 50，總上限 100）</p>
+        <p class="subtitle" id="mainSubtitle">拖曳滑桿調配精神力（每項上限 50，總上限 100）</p>
       </div>
 
       <div id="sliders" style="display: flex; flex-direction: column; gap: 10px;"></div>
 
       <div class="points-box">
-        <span>剩餘時間</span>
+        <div class="points-label">
+          <svg class="points-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span id="pointsLabel">剩餘精神力</span>
+        </div>
         <span id="points-display">100 / 100</span>
       </div>
 
       <div class="btn-grid">
+        <!-- 採用純向量 SVG 繪製的霓虹圖釘（永不出現字碼錯誤） -->
         <button class="action-btn lock-prev-btn" id="lockPrevBtn">
-          <svg class="btn-icon" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          <span id="lockPrevBtnText">📌 鎖定為上學期（開始規劃下學期）</span>
+          <svg class="btn-icon" viewBox="0 0 24 24"><path d="M12 17v5M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6a3 3 0 0 0-6 0v4.76z"/></svg>
+          <span id="lockPrevBtnText">鎖定上學期（開始調配下學期）</span>
         </button>
 
         <button class="action-btn confirm-btn" id="confirmBtn" disabled>
           <svg class="btn-icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-          <span id="confirmBtnText">確認精神規劃</span>
+          <span id="confirmBtnText">確認精神調配</span>
         </button>
 
         <button class="action-btn clear-all-btn" id="clearAllBtn" disabled>
-          <svg class="btn-icon" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
-          <span>📸 存檔並換下位</span>
+          <svg class="btn-icon" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+          <span>換下位調配師</span>
         </button>
       </div>
     </div>
@@ -403,17 +929,16 @@
         </div>
         <div class="legend-item" id="legendCurrent">
           <span class="legend-line-current"></span>
-          <span id="legendCurrentText" style="color: var(--neon-blue);">下學期規劃</span>
+          <span id="legendCurrentText" style="color: var(--neon-blue);">下學期調配</span>
         </div>
       </div>
 
-      <!-- 明確寬高與 viewBox -->
-      <svg id="radarSvg" viewBox="0 0 600 600" width="600" height="600"></svg>
+      <svg id="radarSvg" class="radar-svg-el" viewBox="0 0 600 600" width="600" height="600"></svg>
     </div>
   </div>
 
   <button class="floating-anxiety-btn" id="anxietyBtn">
-    <svg class="btn-icon" style="width: 20px; height: 20px;" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+    
     <span id="anxietyBtnText">⚠️ 注入無意識焦慮</span>
   </button>
 
@@ -431,7 +956,7 @@
     const stats = [
       { name: '課業', value: 0, color: '#38bdf8', iconPath: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>' },
       { name: '興趣/活動', value: 0, color: '#facc15', iconPath: '<path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle>' },
-      { name: '家庭', value: 0, color: '#ff2e88', iconPath: '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>' },
+      { name: '家庭', value: 0, color: '#ff2e88', iconPath: '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline>' },
       { name: '職涯打工', value: 0, color: '#bc2eff', iconPath: '<rect width="20" height="14" x="2" y="7" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>' },
       { name: '同儕/戀愛', value: 0, color: '#39ff14', iconPath: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path>' }
     ];
@@ -456,7 +981,7 @@
     startPlanningBtn.addEventListener('click', () => {
       const name = welcomeNameInput.value.trim();
       currentUserName = name || '解憂訪客';
-      document.getElementById('mainTitle').textContent = `${currentUserName} - 時間點數分配`;
+      document.getElementById('mainTitle').textContent = `${currentUserName} - 精神力調配`;
       welcomeOverlay.classList.add('hidden');
     });
 
@@ -464,8 +989,20 @@
       if (e.key === 'Enter') startPlanningBtn.click();
     });
 
-    function drawBackground() {
-      svg.innerHTML = '';
+    function drawBackground(targetSvg = svg) {
+      targetSvg.innerHTML = '';
+
+      const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      defs.innerHTML = `
+        <filter id="neonGlow">
+          <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      `;
+      targetSvg.appendChild(defs);
 
       const vortexGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       vortexGroup.setAttribute('class', 'inward-vortex-layer');
@@ -473,9 +1010,9 @@
         <circle cx="${cx}" cy="${cy}" r="110" class="vortex-inflow-ring vortex-inflow-1" />
         <circle cx="${cx}" cy="${cy}" r="75"  class="vortex-inflow-ring vortex-inflow-2" />
         <circle cx="${cx}" cy="${cy}" r="40"  class="vortex-inflow-ring vortex-inflow-3" />
-        <circle cx="${cx}" cy="${cy}" r="6"   fill="rgba(255, 42, 42, 0.7)" />
+        <circle cx="${cx}" cy="${cy}" r="6"   fill="rgba(255, 42, 42, 0.7)" filter="url(#neonGlow)" />
       `;
-      svg.appendChild(vortexGroup);
+      targetSvg.appendChild(vortexGroup);
 
       for (let level = 1; level <= 5; level++) {
         const r = (radius / 5) * level;
@@ -486,7 +1023,8 @@
         const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
         poly.setAttribute('points', pts);
         poly.setAttribute('class', 'grid-line');
-        svg.appendChild(poly);
+        poly.setAttribute('filter', 'url(#neonGlow)');
+        targetSvg.appendChild(poly);
       }
 
       stats.forEach((stat, i) => {
@@ -500,7 +1038,7 @@
         line.setAttribute('x2', x);
         line.setAttribute('y2', y);
         line.setAttribute('class', 'axis-line');
-        svg.appendChild(line);
+        targetSvg.appendChild(line);
 
         const labelGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         const offsetDist = 28;
@@ -521,6 +1059,7 @@
         iconG.setAttribute('transform', `translate(${anchorX + iconOffsetX}, ${anchorY + iconOffsetY}) scale(0.8)`);
         iconG.setAttribute('class', 'svg-node-icon');
         iconG.setAttribute('stroke', stat.color);
+        iconG.setAttribute('style', `filter: drop-shadow(0 0 4px ${stat.color});`);
         iconG.innerHTML = stat.iconPath;
         labelGroup.appendChild(iconG);
 
@@ -533,91 +1072,95 @@
         text.textContent = stat.name;
         labelGroup.appendChild(text);
 
-        svg.appendChild(labelGroup);
+        targetSvg.appendChild(labelGroup);
       });
 
       const radarPrevPoly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-      radarPrevPoly.setAttribute('id', 'radarPrevPoly');
       radarPrevPoly.setAttribute('class', 'radar-area-prev');
       radarPrevPoly.style.display = 'none';
-      svg.appendChild(radarPrevPoly);
+      targetSvg.appendChild(radarPrevPoly);
 
       const pointsPrevGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      pointsPrevGroup.setAttribute('id', 'pointsPrevGroup');
-      svg.appendChild(pointsPrevGroup);
+      targetSvg.appendChild(pointsPrevGroup);
 
       const radarPoly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-      radarPoly.setAttribute('id', 'radarPoly');
       radarPoly.setAttribute('class', 'radar-area');
-      svg.appendChild(radarPoly);
+      targetSvg.appendChild(radarPoly);
 
       const pointsGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      pointsGroup.setAttribute('id', 'pointsGroup');
-      svg.appendChild(pointsGroup);
+      targetSvg.appendChild(pointsGroup);
     }
 
-    function updateChart() {
-      const poly = document.getElementById('radarPoly');
-      const pointsGroup = document.getElementById('pointsGroup');
-      const prevPoly = document.getElementById('radarPrevPoly');
-      const pointsPrevGroup = document.getElementById('pointsPrevGroup');
+    function updateChart(targetContainer = document, forceAnxiety = null) {
+      const isAnx = (forceAnxiety !== null) ? forceAnxiety : isAnxietyMode;
+      const poly = targetContainer.querySelector('.radar-area');
+      const prevPoly = targetContainer.querySelector('.radar-area-prev');
+      const allGroups = targetContainer.querySelectorAll('.chart-container svg g');
       
-      pointsGroup.innerHTML = '';
-      pointsPrevGroup.innerHTML = '';
+      const pointsPrevGroup = allGroups[allGroups.length - 2];
+      const pointsGroup = allGroups[allGroups.length - 1];
+      
+      if (pointsGroup) pointsGroup.innerHTML = '';
+      if (pointsPrevGroup) pointsPrevGroup.innerHTML = '';
 
       const currentTotal = stats.reduce((sum, s) => sum + s.value, 0);
 
-      if (previousStats) {
+      if (previousStats && prevPoly) {
         prevPoly.style.display = 'block';
         const prevCoords = previousStats.map((stat, i) => {
           const angle = (Math.PI * 2 / 5) * i - Math.PI / 2;
           let effectivePrevVal = stat.value;
-          if (isAnxietyMode && effectivePrevVal > 0) {
+          if (isAnx && effectivePrevVal > 0) {
             effectivePrevVal = Math.round(effectivePrevVal * SHRINK_RATIO);
           }
           const r = (effectivePrevVal > 0) ? Math.min(radius, (effectivePrevVal / FIXED_SCALE_MAX) * radius) : 0;
           const x = cx + r * Math.cos(angle);
           const y = cy + r * Math.sin(angle);
 
-          if (effectivePrevVal > 0) {
+          if (effectivePrevVal > 0 && pointsPrevGroup) {
             const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             circle.setAttribute('cx', x);
             circle.setAttribute('cy', y);
-            circle.setAttribute('r', isAnxietyMode ? 3.8 : 4.5);
+            circle.setAttribute('r', isAnx ? 3.8 : 4.5);
             circle.setAttribute('class', 'radar-point-prev');
             pointsPrevGroup.appendChild(circle);
           }
           return `${x.toFixed(1)},${y.toFixed(1)}`;
         });
         prevPoly.setAttribute('points', prevCoords.join(' '));
-      } else {
+      } else if (prevPoly) {
         prevPoly.style.display = 'none';
       }
 
-      const coords = stats.map((stat, i) => {
-        const angle = (Math.PI * 2 / 5) * i - Math.PI / 2;
-        let effectiveVal = stat.value;
-        if (isAnxietyMode && effectiveVal > 0) {
-          effectiveVal = Math.round(effectiveVal * SHRINK_RATIO);
-        }
-        const r = (effectiveVal > 0) ? Math.min(radius, (effectiveVal / FIXED_SCALE_MAX) * radius) : 0;
-        const x = cx + r * Math.cos(angle);
-        const y = cy + r * Math.sin(angle);
+      if (poly) {
+        const coords = stats.map((stat, i) => {
+          const angle = (Math.PI * 2 / 5) * i - Math.PI / 2;
+          let effectiveVal = stat.value;
+          if (isAnx && effectiveVal > 0) {
+            effectiveVal = Math.round(effectiveVal * SHRINK_RATIO);
+          }
+          const r = (effectiveVal > 0) ? Math.min(radius, (effectiveVal / FIXED_SCALE_MAX) * radius) : 0;
+          const x = cx + r * Math.cos(angle);
+          const y = cy + r * Math.sin(angle);
 
-        if (effectiveVal > 0) {
-          const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-          circle.setAttribute('cx', x);
-          circle.setAttribute('cy', y);
-          circle.setAttribute('r', isAnxietyMode ? 4.2 : 5.5);
-          circle.setAttribute('class', 'radar-point');
-          pointsGroup.appendChild(circle);
-        }
-        return `${x.toFixed(1)},${y.toFixed(1)}`;
-      });
-      poly.setAttribute('points', coords.join(' '));
+          if (effectiveVal > 0 && pointsGroup) {
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', x);
+            circle.setAttribute('cy', y);
+            circle.setAttribute('r', isAnx ? 4.2 : 5.5);
+            circle.setAttribute('class', 'radar-point');
+            pointsGroup.appendChild(circle);
+          }
+          return `${x.toFixed(1)},${y.toFixed(1)}`;
+        });
+        poly.setAttribute('points', coords.join(' '));
+      }
 
-      const remaining = TOTAL_POINTS - currentTotal;
-      document.getElementById('points-display').textContent = isAnxietyMode ? `0 (被內耗吞噬)` : `${remaining} / ${TOTAL_POINTS}`;
+      const pointsDisplay = targetContainer.querySelector('#points-display') || document.getElementById('points-display');
+      if (pointsDisplay) {
+        const remaining = TOTAL_POINTS - currentTotal;
+        pointsDisplay.textContent = isAnx ? `0 (被內耗吞噬)` : `${remaining} / ${TOTAL_POINTS}`;
+      }
     }
 
     function createSliders() {
@@ -680,7 +1223,7 @@
       if (isAnxietyMode || isFinalized) return;
       const currentSum = stats.reduce((sum, s) => sum + s.value, 0);
       if (currentSum === 0) {
-        alert('請先為「上學期」分配點數後再進行鎖定比對喔！');
+        alert('請先為「上學期」調配精神力後再進行鎖定比對喔！');
         return;
       }
 
@@ -690,10 +1233,12 @@
 
       const stageBadge = document.getElementById('stageBadge');
       stageBadge.classList.add('comparing');
-      stageBadge.innerHTML = '<span>階段 2：規劃【下學期】（完成後請點擊確認）</span>';
+      stageBadge.innerHTML = '<span>階段 2：調配【下學期】</span>';
       document.getElementById('chartLegend').style.display = 'flex';
       document.getElementById('legendPrev').style.display = 'flex';
-      document.getElementById('lockPrevBtnText').textContent = '📌 重新更新上學期基準';
+      
+      // 使用 innerText 設置純文字，圖釘圖示由內嵌向量 SVG 自行維持
+      document.getElementById('lockPrevBtnText').innerText = '重新更新上學期基準';
 
       createSliders();
       updateChart();
@@ -703,7 +1248,7 @@
       if (isFinalized || !previousStats) return;
       const currentSum = stats.reduce((sum, s) => sum + s.value, 0);
       if (currentSum === 0) {
-        alert('請先分配「下學期」的點數後再點擊確認喔！');
+        alert('請先調配「下學期」的精神力後再點擊確認喔！');
         return;
       }
 
@@ -719,7 +1264,7 @@
 
       const stageBadge = document.getElementById('stageBadge');
       stageBadge.className = 'stage-badge finalized';
-      stageBadge.innerHTML = '<span>🎉 規劃已確認完成（可點擊存檔並換下位）</span>';
+      stageBadge.innerHTML = '<span>🎉 調配已確定完成</span>';
 
       createSliders();
 
@@ -728,7 +1273,6 @@
       }
     });
 
-    // 【iPad Safari 專用高相容截圖函式】
     async function captureElement(element) {
       return await html2canvas(element, {
         backgroundColor: '#090a10',
@@ -739,7 +1283,6 @@
       });
     }
 
-    // 【自動上下合併畫布，100% 規避 Safari 攔截連續下載問題】
     function combineCanvases(c1, c2) {
       const merged = document.createElement('canvas');
       merged.width = Math.max(c1.width, c2.width);
@@ -751,7 +1294,6 @@
 
       ctx.drawImage(c1, 0, 0);
       
-      // 分隔線
       ctx.strokeStyle = '#bc2eff';
       ctx.lineWidth = 4;
       ctx.beginPath();
@@ -763,46 +1305,78 @@
       return merged;
     }
 
+    async function captureAnxietyOffscreen() {
+      const clone = captureContainer.cloneNode(true);
+      clone.classList.add('fake-anxiety');
+      clone.style.position = 'fixed';
+      clone.style.top = '-9999px';
+      clone.style.left = '-9999px';
+      clone.style.width = `${captureContainer.offsetWidth}px`;
+      clone.style.zIndex = '-1';
+      document.body.appendChild(clone);
+
+      const cloneTitle = clone.querySelector('#mainTitle');
+      if (cloneTitle) cloneTitle.textContent = `${currentUserName} - 無意識焦慮侵蝕`;
+      const cloneSubtitle = clone.querySelector('#mainSubtitle');
+      if (cloneSubtitle) cloneSubtitle.textContent = '上學期的記憶與下學期的調配，雙雙被無意識的內耗蠶食萎縮 30%...';
+      const cloneBadge = clone.querySelector('#stageBadge');
+      if (cloneBadge) cloneBadge.innerHTML = '<span>⚠️ 警報：雙學期產出同步微幅塌陷</span>';
+      
+      const cloneLegendCurrent = clone.querySelector('#legendCurrentText');
+      if (cloneLegendCurrent) cloneLegendCurrent.textContent = '下學期 (萎縮)';
+      const cloneLegendPrev = clone.querySelector('#legendPrevText');
+      if (cloneLegendPrev) cloneLegendPrev.textContent = '上學期 (萎縮)';
+
+      const statRows = clone.querySelectorAll('.stat-row');
+      stats.forEach((stat, i) => {
+        if (statRows[i]) {
+          const valEl = statRows[i].querySelector('.stat-val');
+          const shrinkVal = Math.round(stat.value * SHRINK_RATIO);
+          if (valEl) valEl.innerHTML = `${shrinkVal} <span style="font-size:12px;color:#ff6666;">(-${stat.value - shrinkVal})</span>`;
+          
+          const prevTag = statRows[i].querySelector('.prev-val-tag');
+          if (prevTag && previousStats && previousStats[i].value > 0) {
+            const shrinkPrev = Math.round(previousStats[i].value * SHRINK_RATIO);
+            prevTag.innerHTML = `（上學期萎縮: ${shrinkPrev}）`;
+            prevTag.style.color = '#ff8888';
+          }
+        }
+      });
+
+      const cloneSvg = clone.querySelector('svg.radar-svg-el');
+      drawBackground(cloneSvg);
+      updateChart(clone, true);
+
+      await new Promise(r => setTimeout(r, 150));
+      const canvas = await captureElement(clone);
+      document.body.removeChild(clone);
+      return canvas;
+    }
+
     clearAllBtn.addEventListener('click', async () => {
       if (!isFinalized || !previousStats) {
-        alert('請先完成雙學期規劃並按下確認後才能存檔喔！');
+        alert('請先完成雙學期調配並按下確認後才能存檔喔！');
         return;
       }
 
-      const userName = currentUserName || '未命名規劃師';
-      const confirmSave = confirm(`即將保存【${userName}】的規劃對比圖檔，並清空換下一位，是否繼續？`);
+      const confirmSave = confirm('是否存檔並換下一位？');
       if (!confirmSave) return;
 
+      const userName = currentUserName || '未命名調配師';
       const now = new Date();
       const dateStr = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getDate().toString().padStart(2,'0')}_${now.getHours().toString().padStart(2,'0')}${now.getMinutes().toString().padStart(2,'0')}`;
 
-      // 1. 截取正常規劃版
-      isAnxietyMode = false;
-      document.body.classList.remove('anxiety-mode');
-      createSliders();
-      updateChart();
-      await new Promise(r => setTimeout(r, 200));
-      const canvas1 = await captureElement(captureContainer);
+      const canvasNormal = await captureElement(captureContainer);
+      const canvasAnxiety = await captureAnxietyOffscreen();
 
-      // 2. 截取焦慮版
-      isAnxietyMode = true;
-      document.body.classList.add('anxiety-mode');
-      createSliders();
-      updateChart();
-      await new Promise(r => setTimeout(r, 200));
-      const canvas2 = await captureElement(captureContainer);
-
-      // 3. 雙圖無縫合併成一張大圖，單次觸發下載
-      const combined = combineCanvases(canvas1, canvas2);
+      const combined = combineCanvases(canvasNormal, canvasAnxiety);
       const link = document.createElement('a');
-      link.download = `解憂Bar_${userName}_雙學期與焦慮對比_${dateStr}.png`;
+      link.download = `解憂Bar_${userName}_精神調配.png`;
       link.href = combined.toDataURL('image/png');
       link.click();
 
-      document.body.classList.remove('anxiety-mode');
-
-      // 重置回到下一位
       isAnxietyMode = false;
+      document.body.classList.remove('anxiety-mode');
       previousStats = null;
       isFinalized = false;
       stats.forEach(s => s.value = 0);
@@ -813,17 +1387,19 @@
       lockPrevBtn.style.cursor = 'pointer';
 
       confirmBtn.disabled = true;
-      document.getElementById('confirmBtnText').textContent = '確認精神規劃';
+      document.getElementById('confirmBtnText').textContent = '確認精神調配';
       clearAllBtn.disabled = true;
 
       anxietyBtn.classList.remove('revealed');
 
       const stageBadge = document.getElementById('stageBadge');
       stageBadge.className = 'stage-badge';
-      stageBadge.innerHTML = '<span>階段 1：設定【上學期】實際分配</span>';
+      stageBadge.innerHTML = '<span>階段 1：設定【上學期】實際調配</span>';
       document.getElementById('chartLegend').style.display = 'none';
-      document.getElementById('lockPrevBtnText').textContent = '📌 鎖定為上學期（開始規劃下學期）';
-      document.getElementById('mainTitle').textContent = '時間點數分配';
+      document.getElementById('lockPrevBtnText').innerText = '鎖定上學期（開始調配下學期）';
+      document.getElementById('mainTitle').textContent = '精神力調配';
+      document.getElementById('mainSubtitle').textContent = '拖曳滑桿調配精神力（每項上限 50，總上限 100）';
+      document.getElementById('pointsLabel').textContent = '剩餘精神力';
 
       createSliders();
       updateChart();
@@ -837,23 +1413,27 @@
 
       if (isAnxietyMode) {
         document.body.classList.add('anxiety-mode');
-        document.getElementById('signText').textContent = '⚠️ 現實焦慮Bar · 雙學期內耗侵蝕中';
+        document.getElementById('signText').textContent = '⚠️ 現實焦慮Bar · 內耗侵蝕中';
         document.getElementById('mainTitle').textContent = `${currentUserName} - 無意識焦慮侵蝕`;
+        document.getElementById('mainSubtitle').textContent = '上學期的記憶與下學期的調配，雙雙被無意識的內耗蠶食萎縮 30%...';
         document.getElementById('stageBadge').innerHTML = '<span>⚠️ 警報：雙學期產出同步微幅塌陷</span>';
+        document.getElementById('pointsLabel').textContent = '自由支配精神力';
         document.getElementById('anxietyBtnText').textContent = '✨ 喚回理智與掌控感';
         document.getElementById('chartLegend').style.display = 'flex';
         document.getElementById('legendCurrentText').textContent = '下學期 (萎縮)';
         document.getElementById('legendPrevText').textContent = '上學期 (萎縮)';
       } else {
         document.body.classList.remove('anxiety-mode');
-        document.getElementById('signText').textContent = '🍸 地下解憂Bar 之精神分配';
-        document.getElementById('mainTitle').textContent = `${currentUserName} - 時間點數分配`;
+        document.getElementById('signText').textContent = '🍸 地下解憂Bar 之精神調配';
+        document.getElementById('mainTitle').textContent = `${currentUserName} - 精神力調配`;
+        document.getElementById('mainSubtitle').textContent = '拖曳滑桿調配精神力（每項上限 50，總上限 100）';
         const stageBadge = document.getElementById('stageBadge');
         stageBadge.className = 'stage-badge finalized';
-        stageBadge.innerHTML = '<span>🎉 規劃已確定完成（可點擊存檔並換下位）</span>';
+        stageBadge.innerHTML = '<span>🎉 調配已確定完成</span>';
+        document.getElementById('pointsLabel').textContent = '剩餘精神力';
         document.getElementById('legendPrevText').textContent = '上學期基準';
         document.getElementById('anxietyBtnText').textContent = '⚠️ 注入無意識焦慮';
-        document.getElementById('legendCurrentText').textContent = '下學期規劃';
+        document.getElementById('legendCurrentText').textContent = '下學期調配';
       }
 
       createSliders();
