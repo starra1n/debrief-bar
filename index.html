@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>解憂 Bar - 5維時間點數雷達圖（微型黑洞版）</title>
+  <title>解憂 Bar - 5維時間點數雷達圖</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     
@@ -48,6 +49,93 @@
         radial-gradient(circle at 50% 50%, rgba(180, 0, 0, 0.2) 0%, transparent 70%),
         repeating-linear-gradient(0deg, #120406 0px, #120406 44px, #25060e 45px, #120406 46px),
         #050002;
+    }
+
+    /* 起始歡迎彈窗 (Welcome Screen) */
+    .welcome-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 6, 8, 0.94);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+
+    .welcome-overlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .welcome-card {
+      background: rgba(16, 20, 30, 0.95);
+      border: 2px solid var(--neon-pink);
+      border-radius: 28px;
+      padding: 40px 36px;
+      max-width: 440px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 0 35px rgba(255, 46, 136, 0.35), inset 0 0 15px rgba(255, 46, 136, 0.15);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .welcome-card h1 {
+      font-size: 26px;
+      color: var(--neon-pink);
+      text-shadow: 0 0 10px var(--neon-pink);
+      letter-spacing: 2px;
+    }
+
+    .welcome-card p {
+      font-size: 14.5px;
+      color: rgba(255, 255, 255, 0.75);
+      line-height: 1.6;
+    }
+
+    .welcome-input {
+      width: 100%;
+      padding: 12px 18px;
+      background: rgba(8, 10, 16, 0.85);
+      border: 1.5px solid var(--neon-purple);
+      border-radius: 12px;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      outline: none;
+      text-align: center;
+      text-shadow: 0 0 4px #fff;
+      box-shadow: 0 0 12px rgba(188, 46, 255, 0.25);
+    }
+    .welcome-input:focus {
+      border-color: var(--neon-blue);
+      box-shadow: 0 0 18px rgba(46, 151, 255, 0.5);
+    }
+
+    .start-btn {
+      width: 100%;
+      padding: 14px;
+      background: rgba(255, 46, 136, 0.15);
+      border: 1.8px solid var(--neon-pink);
+      border-radius: 14px;
+      color: var(--neon-pink);
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 0 14px rgba(255, 46, 136, 0.3);
+      text-shadow: 0 0 6px var(--neon-pink);
+      transition: all 0.2s ease;
+    }
+    .start-btn:hover {
+      background: rgba(255, 46, 136, 0.3);
+      box-shadow: 0 0 24px rgba(255, 46, 136, 0.6);
+      transform: translateY(-2px);
     }
 
     .ambient-icon {
@@ -122,7 +210,7 @@
     }
 
     .container {
-      background: rgba(13, 16, 25, 0.88);
+      background: rgba(13, 16, 25, 0.92);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border-radius: 32px;
@@ -131,10 +219,10 @@
         0 0 40px rgba(188, 46, 255, 0.28), 
         0 25px 50px rgba(0,0,0,0.85),
         inset 0 0 25px rgba(188, 46, 255, 0.12);
-      padding: 44px 48px;
+      padding: 40px 46px;
       display: flex;
       flex-direction: row;
-      gap: 50px;
+      gap: 46px;
       align-items: center;
       max-width: 1360px;
       width: 100%;
@@ -176,7 +264,7 @@
       min-width: 360px;
       display: flex;
       flex-direction: column;
-      gap: 13px;
+      gap: 12px;
       position: relative;
       z-index: 1;
     }
@@ -201,12 +289,13 @@
     }
 
     h2 {
-      font-size: 26px;
+      font-size: 24px;
       font-weight: 700;
       color: var(--neon-pink);
       text-shadow: 0 0 8px var(--neon-pink), 0 0 18px var(--neon-pink);
       letter-spacing: 1px;
       transition: all 0.3s ease;
+      white-space: nowrap;
     }
 
     body.anxiety-mode h2 {
@@ -215,11 +304,10 @@
     }
 
     .subtitle {
-      font-size: 14px;
+      font-size: 13.5px;
       color: rgba(255, 255, 255, 0.7);
       text-shadow: 0 0 3px rgba(255, 255, 255, 0.4);
       margin-top: 2px;
-      transition: color 0.3s ease;
     }
 
     body.anxiety-mode .subtitle {
@@ -239,7 +327,7 @@
       color: var(--neon-blue);
       text-shadow: 0 0 6px var(--neon-blue);
       width: fit-content;
-      margin-top: 2px;
+      margin-top: 4px;
       transition: all 0.3s ease;
     }
 
@@ -269,7 +357,7 @@
       flex-direction: column;
       gap: 6px;
       background: rgba(255, 255, 255, 0.02);
-      padding: 8px 12px;
+      padding: 7px 12px;
       border-radius: 12px;
       border: 1px solid rgba(255, 255, 255, 0.05);
       transition: all 0.3s ease;
@@ -284,7 +372,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 15px;
+      font-size: 14.5px;
       font-weight: 600;
       color: #f1f5f9;
     }
@@ -316,7 +404,7 @@
     .stat-val {
       color: var(--neon-blue);
       font-weight: 700;
-      font-size: 16px;
+      font-size: 15.5px;
       text-shadow: 0 0 6px var(--neon-blue);
       font-family: 'Courier New', Courier, monospace;
     }
@@ -376,7 +464,7 @@
 
     .points-box {
       margin-top: 2px;
-      padding: 12px 16px;
+      padding: 10px 14px;
       background: rgba(0, 0, 0, 0.5);
       border-radius: 12px;
       border: 2px solid var(--neon-green);
@@ -384,7 +472,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 15px;
+      font-size: 14.5px;
       font-weight: 700;
       color: var(--neon-green);
       text-shadow: 0 0 6px var(--neon-green), 0 0 12px var(--neon-green);
@@ -406,8 +494,8 @@
     }
 
     .points-icon {
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
       stroke: currentColor;
       fill: none;
       stroke-width: 2;
@@ -529,10 +617,6 @@
       text-shadow: 0 0 8px var(--neon-green);
       box-shadow: 0 0 20px rgba(57, 255, 20, 0.4);
     }
-    body.anxiety-mode .floating-anxiety-btn:hover {
-      background: rgba(57, 255, 20, 0.25);
-      box-shadow: 0 0 30px rgba(57, 255, 20, 0.8);
-    }
 
     .btn-icon {
       width: 17px;
@@ -631,7 +715,6 @@
       stroke: rgba(255, 68, 68, 0.4);
     }
 
-    /* 【微型黑洞：向心引力漩渦層】 */
     .inward-vortex-layer {
       opacity: 0;
       pointer-events: none;
@@ -650,44 +733,14 @@
       transform-origin: 320px 320px;
     }
 
-    .vortex-inflow-1 {
-      stroke-width: 1.6;
-      animation: inwardSuck 3.2s infinite linear;
-      opacity: 0.65;
-    }
+    .vortex-inflow-1 { stroke-width: 1.6; animation: inwardSuck 3.2s infinite linear; opacity: 0.65; }
+    .vortex-inflow-2 { stroke-width: 1.3; stroke: #ff0055; stroke-dasharray: 4 6 8 4; animation: inwardSuck 4.2s infinite linear reverse; animation-delay: -1.2s; opacity: 0.55; }
+    .vortex-inflow-3 { stroke-width: 1.8; stroke: #bc2eff; animation: inwardSuck 5.5s infinite linear; animation-delay: -2.4s; opacity: 0.45; }
 
-    .vortex-inflow-2 {
-      stroke-width: 1.3;
-      stroke: #ff0055;
-      stroke-dasharray: 4 6 8 4;
-      animation: inwardSuck 4.2s infinite linear reverse;
-      animation-delay: -1.2s;
-      opacity: 0.55;
-    }
-
-    .vortex-inflow-3 {
-      stroke-width: 1.8;
-      stroke: #bc2eff;
-      animation: inwardSuck 5.5s infinite linear;
-      animation-delay: -2.4s;
-      opacity: 0.45;
-    }
-
-    /* 微型黑洞向心關鍵影格 */
     @keyframes inwardSuck {
-      0% {
-        transform: scale(1.2) rotate(0deg);
-        opacity: 0.75;
-        stroke-width: 2px;
-      }
-      50% {
-        opacity: 0.45;
-      }
-      100% {
-        transform: scale(0.1) rotate(360deg);
-        opacity: 0;
-        stroke-width: 0.6px;
-      }
+      0% { transform: scale(1.2) rotate(0deg); opacity: 0.75; stroke-width: 2px; }
+      50% { opacity: 0.45; }
+      100% { transform: scale(0.1) rotate(360deg); opacity: 0; stroke-width: 0.6px; }
     }
 
     .radar-area-prev {
@@ -714,10 +767,7 @@
       transition: all 0.8s cubic-bezier(0.55, 0, 0.1, 1);
     }
 
-    body.anxiety-mode .radar-point-prev {
-      stroke: #8899aa;
-      r: 3.8;
-    }
+    body.anxiety-mode .radar-point-prev { stroke: #8899aa; r: 3.8; }
 
     .radar-area {
       fill: rgba(46, 151, 255, 0.24);
@@ -743,10 +793,7 @@
       transition: all 0.8s cubic-bezier(0.55, 0, 0.1, 1);
     }
 
-    body.anxiety-mode .radar-point {
-      stroke: #4488cc;
-      r: 4.2;
-    }
+    body.anxiety-mode .radar-point { stroke: #4488cc; r: 4.2; }
 
     .stat-label {
       font-size: 14px;
@@ -761,10 +808,7 @@
       text-shadow: 0 0 6px #ff2a2a;
     }
 
-    .svg-node-icon {
-      stroke-width: 2;
-      fill: none;
-    }
+    .svg-node-icon { stroke-width: 2; fill: none; }
 
     @media (max-width: 960px) {
       .ambient-icon { display: none; }
@@ -776,16 +820,23 @@
       }
       .controls { width: 100%; min-width: 100%; }
       svg { max-width: 460px; }
-      .floating-anxiety-btn {
-        right: 16px;
-        bottom: 16px;
-        padding: 10px 16px;
-        font-size: 13px;
-      }
+      .floating-anxiety-btn { right: 16px; bottom: 16px; padding: 10px 16px; font-size: 13px; }
     }
   </style>
 </head>
 <body>
+
+  <div class="welcome-overlay" id="welcomeOverlay">
+    <div class="welcome-card">
+      <div style="display:flex; justify-content:center; gap:8px;">
+        <svg viewBox="0 0 24 24" width="36" height="36" stroke="var(--neon-pink)" fill="none" stroke-width="2"><path d="M8 22h8M12 15v7M3 4l9 11 9-11H3zM5.5 7h13"/></svg>
+      </div>
+      <h1>解憂 BAR 入口</h1>
+      <p>歡迎來到精神調配所。在開始前，請留下你的名字或專屬代號：</p>
+      <input type="text" id="welcomeNameInput" class="welcome-input" placeholder="輸入你的名字..." autofocus />
+      <button class="start-btn" id="startPlanningBtn">🍸 進入調配吧檯</button>
+    </div>
+  </div>
 
   <svg class="ambient-icon amb-disc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><path d="M12 2a10 10 0 0 0-4 1"/><path d="M12 22a10 10 0 0 0 4-1"/></svg>
   <svg class="ambient-icon amb-note" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
@@ -798,7 +849,7 @@
     <svg class="sign-mini-icon" viewBox="0 0 24 24"><path d="m12 3 2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></svg>
   </div>
 
-  <div class="container">
+  <div class="container" id="captureContainer">
     <svg class="bg-icon bg-cocktail" viewBox="0 0 24 24"><path d="M8 22h8M12 15v7M3 4l9 11 9-11H3zM5.5 7h13"/></svg>
     <svg class="bg-icon bg-beer" viewBox="0 0 24 24"><path d="M17 11h1a3 3 0 0 1 0 6h-1M5 8h12v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8zM5 8a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2M8 12v5M12 12v5"/></svg>
     <svg class="bg-icon bg-sparkle1" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
@@ -838,8 +889,8 @@
         </button>
 
         <button class="action-btn clear-all-btn" id="clearAllBtn">
-          <svg class="btn-icon" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
-          <span>🔄 換下位規劃師</span>
+          <svg class="btn-icon" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          <span>📸 存檔並換下位</span>
         </button>
       </div>
     </div>
@@ -866,12 +917,13 @@
   </button>
 
   <script>
+    let currentUserName = '';
     let isAnxietyMode = false;
     let isFinalized = false;
     let TOTAL_POINTS = 100;
     const SLIDER_MAX = 50;
-    const FIXED_SCALE_MAX = 30; // 固定比例尺基準 30
-    const SHRINK_RATIO = 0.70; // 萎縮 30%
+    const FIXED_SCALE_MAX = 30;
+    const SHRINK_RATIO = 0.70;
 
     let previousStats = null;
 
@@ -890,11 +942,27 @@
     const confirmBtn = document.getElementById('confirmBtn');
     const clearAllBtn = document.getElementById('clearAllBtn');
     const anxietyBtn = document.getElementById('anxietyBtn');
+    const captureContainer = document.getElementById('captureContainer');
+    const welcomeOverlay = document.getElementById('welcomeOverlay');
+    const welcomeNameInput = document.getElementById('welcomeNameInput');
+    const startPlanningBtn = document.getElementById('startPlanningBtn');
 
     function isNightTime() {
       const currentHour = new Date().getHours();
       return currentHour >= 21 || currentHour < 6;
     }
+
+    // 啟動歡迎彈窗邏輯
+    startPlanningBtn.addEventListener('click', () => {
+      const name = welcomeNameInput.value.trim();
+      currentUserName = name || '解憂訪客';
+      document.getElementById('mainTitle').textContent = `${currentUserName} - 時間點數分配`;
+      welcomeOverlay.classList.add('hidden');
+    });
+
+    welcomeNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') startPlanningBtn.click();
+    });
 
     function drawBackground() {
       svg.innerHTML = '';
@@ -911,7 +979,6 @@
       `;
       svg.appendChild(defs);
 
-      // 【微型向心引力漩渦層（半徑縮小至 110/75/40）】
       const vortexGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       vortexGroup.setAttribute('class', 'inward-vortex-layer');
       vortexGroup.innerHTML = `
@@ -922,7 +989,6 @@
       `;
       svg.appendChild(vortexGroup);
 
-      // 五層五角形網格
       for (let level = 1; level <= 5; level++) {
         const r = (radius / 5) * level;
         const pts = stats.map((_, i) => {
@@ -1000,7 +1066,6 @@
         svg.appendChild(labelGroup);
       });
 
-      // 1. 上學期參考層
       const radarPrevPoly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
       radarPrevPoly.setAttribute('id', 'radarPrevPoly');
       radarPrevPoly.setAttribute('class', 'radar-area-prev');
@@ -1011,7 +1076,6 @@
       pointsPrevGroup.setAttribute('id', 'pointsPrevGroup');
       svg.appendChild(pointsPrevGroup);
 
-      // 2. 當前規劃層
       const radarPoly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
       radarPoly.setAttribute('id', 'radarPoly');
       radarPoly.setAttribute('class', 'radar-area');
@@ -1033,7 +1097,6 @@
 
       const currentTotal = stats.reduce((sum, s) => sum + s.value, 0);
 
-      // 1. 繪製上學期
       if (previousStats) {
         prevPoly.style.display = 'block';
         const prevCoords = previousStats.map((stat, i) => {
@@ -1063,7 +1126,6 @@
         prevPoly.style.display = 'none';
       }
 
-      // 2. 繪製當前規劃
       const coords = stats.map((stat, i) => {
         const angle = (Math.PI * 2 / 5) * i - Math.PI / 2;
         
@@ -1202,25 +1264,87 @@
 
       const stageBadge = document.getElementById('stageBadge');
       stageBadge.className = 'stage-badge finalized';
-      stageBadge.innerHTML = '<span>🎉 規劃已確定完成（如需重新開始請換下位同學）</span>';
+      stageBadge.innerHTML = '<span>🎉 規劃已確定完成（如需存檔請點擊換下位）</span>';
 
       createSliders();
 
+      // 時間若已過 21:00，畫面才會讓使用者看見焦慮按鈕
       if (isNightTime()) {
         anxietyBtn.classList.add('revealed');
       }
     });
 
-    // 3. 換下位同學
-    clearAllBtn.addEventListener('click', () => {
-      if (isAnxietyMode) {
+    // 輔助截圖下載函式
+    function downloadCanvas(canvas, fileName) {
+      return new Promise((resolve) => {
+        const link = document.createElement('a');
+        link.download = fileName;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        setTimeout(resolve, 300);
+      });
+    }
+
+    // 3. 換下位同學：無論時間為何，皆自動依序截取「規劃版」與「焦慮版」兩張圖檔
+    clearAllBtn.addEventListener('click', async () => {
+      const currentSum = stats.reduce((sum, s) => sum + s.value, 0);
+      const prevSum = previousStats ? previousStats.reduce((sum, s) => sum + s.value, 0) : 0;
+      const userName = currentUserName || '未命名規劃師';
+
+      if (currentSum > 0 || prevSum > 0) {
+        const confirmSave = confirm(`即將自動保存【${userName}】的「雙學期規劃版」與「無意識焦慮版」雙圖檔，是否繼續？`);
+        if (!confirmSave) return;
+
+        const now = new Date();
+        const dateStr = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getDate().toString().padStart(2,'0')}_${now.getHours().toString().padStart(2,'0')}${now.getMinutes().toString().padStart(2,'0')}`;
+
+        // 紀錄當前使用者是否處於焦慮狀態
+        const originalAnxietyState = isAnxietyMode;
+
+        // --- 截圖 1：正常雙學期規劃版 ---
+        if (isAnxietyMode) {
+          isAnxietyMode = false;
+          document.body.classList.remove('anxiety-mode');
+          createSliders();
+          updateChart();
+          await new Promise(r => setTimeout(r, 100));
+        }
+
+        const canvasNormal = await html2canvas(captureContainer, {
+          backgroundColor: '#090a10',
+          scale: 2,
+          useCORS: true
+        });
+        await downloadCanvas(canvasNormal, `解憂Bar_${userName}_雙學期規劃_${dateStr}.png`);
+
+        // --- 截圖 2：焦慮侵蝕版 ---
+        isAnxietyMode = true;
+        document.body.classList.add('anxiety-mode');
+        document.getElementById('legendCurrentText').textContent = '下學期 (萎縮)';
+        if (previousStats) {
+          document.getElementById('legendPrevText').textContent = '上學期 (萎縮)';
+        }
+        createSliders();
+        updateChart();
+        await new Promise(r => setTimeout(r, 150));
+
+        const canvasAnxiety = await html2canvas(captureContainer, {
+          backgroundColor: '#090a10',
+          scale: 2,
+          useCORS: true
+        });
+        await downloadCanvas(canvasAnxiety, `解憂Bar_${userName}_無意識焦慮侵蝕_${dateStr}.png`);
+
+        // 截圖結束，還原為正常模式
         document.body.classList.remove('anxiety-mode');
-        isAnxietyMode = false;
       }
-      
+
+      // 重置所有資料與回到起始彈窗
+      isAnxietyMode = false;
       previousStats = null;
       isFinalized = false;
       stats.forEach(s => s.value = 0);
+      currentUserName = '';
 
       lockPrevBtn.disabled = false;
       lockPrevBtn.style.opacity = '1';
@@ -1243,16 +1367,20 @@
 
       createSliders();
       updateChart();
+
+      // 重新顯示歡迎輸入彈窗，迎接下一位同學
+      welcomeNameInput.value = '';
+      welcomeOverlay.classList.remove('hidden');
     });
 
-    // 4. 焦慮模式切換
+    // 4. 焦慮模式手動切換（僅限 21:00 後在畫面現形時可用）
     anxietyBtn.addEventListener('click', () => {
       isAnxietyMode = !isAnxietyMode;
 
       if (isAnxietyMode) {
         document.body.classList.add('anxiety-mode');
         document.getElementById('signText').textContent = '⚠️ 現實焦慮Bar · 雙學期內耗侵蝕中';
-        document.getElementById('mainTitle').textContent = '無意識焦慮侵蝕';
+        document.getElementById('mainTitle').textContent = `${currentUserName} - 無意識焦慮侵蝕`;
         document.getElementById('mainSubtitle').textContent = '上學期的記憶與下學期的規劃，雙雙被無意識的內耗蠶食萎縮 30%...';
         document.getElementById('stageBadge').innerHTML = '<span>⚠️ 警報：雙學期產出同步微幅塌陷</span>';
         document.getElementById('pointsLabel').textContent = '自由支配時間';
@@ -1264,12 +1392,12 @@
       } else {
         document.body.classList.remove('anxiety-mode');
         document.getElementById('signText').textContent = '🍸 地下解憂Bar 之精神分配';
-        document.getElementById('mainTitle').textContent = '時間點數分配';
+        document.getElementById('mainTitle').textContent = `${currentUserName} - 時間點數分配`;
         document.getElementById('mainSubtitle').textContent = '拖曳滑桿分配時間（每項上限 50，總上限 100）';
         
         const stageBadge = document.getElementById('stageBadge');
         stageBadge.className = 'stage-badge finalized';
-        stageBadge.innerHTML = '<span>🎉 規劃已確定完成（如需重新開始請換下位同學）</span>';
+        stageBadge.innerHTML = '<span>🎉 規劃已確定完成（如需存檔請點擊換下位）</span>';
         document.getElementById('legendPrevText').textContent = '上學期基準';
 
         document.getElementById('pointsLabel').textContent = '剩餘時間';
