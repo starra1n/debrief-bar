@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>解憂 Bar - 5維精神力點數雷達圖</title>
+  <title>地下解憂Bar-精神調配所</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -856,8 +856,8 @@
       <div style="display:flex; justify-content:center;">
         <svg viewBox="0 0 24 24" width="36" height="36" stroke="var(--neon-pink)" fill="none" stroke-width="2"><path d="M8 22h8M12 15v7M3 4l9 11 9-11H3zM5.5 7h13"/></svg>
       </div>
-      <h1>精神調配所入口</h1>
-      <p>歡迎來到精神調配所。在開始前，請留下你的名字或專屬代號：</p>
+      <h1>歡迎來到精神調配所</h1>
+      <p>在開始前，請留下你的名字或專屬調配代號：</p>
       <input type="text" id="welcomeNameInput" class="welcome-input" placeholder="輸入你的名字..." autofocus />
       <button class="start-btn" id="startPlanningBtn">🍸 進入調配吧檯</button>
     </div>
@@ -939,7 +939,7 @@
 
   <button class="floating-anxiety-btn" id="anxietyBtn">
     
-    <span id="anxietyBtnText">⚠️ 注入無意識焦慮</span>
+    <span id="anxietyBtnText">⚠️ 注入無意義焦慮</span>
   </button>
 
   <script>
@@ -1316,9 +1316,9 @@
       document.body.appendChild(clone);
 
       const cloneTitle = clone.querySelector('#mainTitle');
-      if (cloneTitle) cloneTitle.textContent = `${currentUserName} - 無意識焦慮侵蝕`;
+      if (cloneTitle) cloneTitle.textContent = `${currentUserName} - 無意義焦慮侵蝕`;
       const cloneSubtitle = clone.querySelector('#mainSubtitle');
-      if (cloneSubtitle) cloneSubtitle.textContent = '上學期的記憶與下學期的調配，雙雙被無意識的內耗蠶食萎縮 30%...';
+      if (cloneSubtitle) cloneSubtitle.textContent = '上學期的記憶與下學期的調配，雙雙被無意義的內耗蠶食萎縮 30%...';
       const cloneBadge = clone.querySelector('#stageBadge');
       if (cloneBadge) cloneBadge.innerHTML = '<span>⚠️ 警報：雙學期產出同步微幅塌陷</span>';
       
@@ -1414,14 +1414,14 @@
       if (isAnxietyMode) {
         document.body.classList.add('anxiety-mode');
         document.getElementById('signText').textContent = '⚠️ 現實焦慮Bar · 內耗侵蝕中';
-        document.getElementById('mainTitle').textContent = `${currentUserName} - 無意識焦慮侵蝕`;
-        document.getElementById('mainSubtitle').textContent = '上學期的記憶與下學期的調配，雙雙被無意識的內耗蠶食萎縮 30%...';
-        document.getElementById('stageBadge').innerHTML = '<span>⚠️ 警報：雙學期產出同步微幅塌陷</span>';
+        document.getElementById('mainTitle').textContent = `${currentUserName} - 無意義焦慮侵蝕`;
+        document.getElementById('mainSubtitle').textContent = '上學期的記憶與下學期的調配，被無意義的內耗蠶食萎縮 30%...';
+        document.getElementById('stageBadge').innerHTML = '<span>⚠️ 警報：正在被焦慮侵蝕...</span>';
         document.getElementById('pointsLabel').textContent = '自由支配精神力';
         document.getElementById('anxietyBtnText').textContent = '✨ 喚回理智與掌控感';
         document.getElementById('chartLegend').style.display = 'flex';
-        document.getElementById('legendCurrentText').textContent = '下學期 (萎縮)';
-        document.getElementById('legendPrevText').textContent = '上學期 (萎縮)';
+        document.getElementById('legendCurrentText').textContent = '下學期 (侵蝕)';
+        document.getElementById('legendPrevText').textContent = '上學期 (侵蝕)';
       } else {
         document.body.classList.remove('anxiety-mode');
         document.getElementById('signText').textContent = '🍸 地下解憂Bar 之精神調配';
@@ -1432,7 +1432,7 @@
         stageBadge.innerHTML = '<span>🎉 調配已確定完成</span>';
         document.getElementById('pointsLabel').textContent = '剩餘精神力';
         document.getElementById('legendPrevText').textContent = '上學期基準';
-        document.getElementById('anxietyBtnText').textContent = '⚠️ 注入無意識焦慮';
+        document.getElementById('anxietyBtnText').textContent = '⚠️ 注入無意義焦慮';
         document.getElementById('legendCurrentText').textContent = '下學期調配';
       }
 
