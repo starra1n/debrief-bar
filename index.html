@@ -1233,7 +1233,7 @@
 
       const stageBadge = document.getElementById('stageBadge');
       stageBadge.classList.add('comparing');
-      stageBadge.innerHTML = '<span>階段 2：調配【下學期】</span>';
+      stageBadge.innerHTML = '<span>階段 2：調配【下學期】精神力</span>';
       document.getElementById('chartLegend').style.display = 'flex';
       document.getElementById('legendPrev').style.display = 'flex';
       
@@ -1318,14 +1318,14 @@
       const cloneTitle = clone.querySelector('#mainTitle');
       if (cloneTitle) cloneTitle.textContent = `${currentUserName} - 無意義焦慮侵蝕`;
       const cloneSubtitle = clone.querySelector('#mainSubtitle');
-      if (cloneSubtitle) cloneSubtitle.textContent = '上學期的記憶與下學期的調配，雙雙被無意義的內耗蠶食萎縮 30%...';
+      if (cloneSubtitle) cloneSubtitle.textContent = '上學期的記憶與下學期的調配，被無意義的內耗蠶食...';
       const cloneBadge = clone.querySelector('#stageBadge');
       if (cloneBadge) cloneBadge.innerHTML = '<span>⚠️ 警報：雙學期產出同步微幅塌陷</span>';
       
       const cloneLegendCurrent = clone.querySelector('#legendCurrentText');
-      if (cloneLegendCurrent) cloneLegendCurrent.textContent = '下學期 (萎縮)';
+      if (cloneLegendCurrent) cloneLegendCurrent.textContent = '下學期 (侵蝕)';
       const cloneLegendPrev = clone.querySelector('#legendPrevText');
-      if (cloneLegendPrev) cloneLegendPrev.textContent = '上學期 (萎縮)';
+      if (cloneLegendPrev) cloneLegendPrev.textContent = '上學期 (侵蝕)';
 
       const statRows = clone.querySelectorAll('.stat-row');
       stats.forEach((stat, i) => {
