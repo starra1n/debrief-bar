@@ -976,7 +976,7 @@
 
     function isNightTime() {
       const currentHour = new Date().getHours();
-      return currentHour >= 12 || currentHour < 6;
+      return currentHour >= 21 || currentHour < 6;
     }
 
     startPlanningBtn.addEventListener('click', () => {
